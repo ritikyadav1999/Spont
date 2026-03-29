@@ -43,6 +43,6 @@ public class CustomUserDetails implements UserDetails {
     }
 
     public UUID getUserId() {
-        return null;
+        return user.getUserId();
     }
 }

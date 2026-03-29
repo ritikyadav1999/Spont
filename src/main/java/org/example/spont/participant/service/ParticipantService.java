@@ -1,6 +1,5 @@
 package org.example.spont.participant.service;
 
-import jakarta.servlet.http.Part;
 import lombok.RequiredArgsConstructor;
 import org.example.spont.event.entity.Event;
 import org.example.spont.participant.dto.ParticipantResponse;
@@ -26,8 +25,6 @@ public class ParticipantService {
 
 
     public void addParticipant(Event event, User user,ParticipantRole role) {
-        System.out.println("Adding participant");
-
         Participant participant = new Participant();
         participant.setEvent(event);
         participant.setUser(user);
@@ -38,7 +35,6 @@ public class ParticipantService {
         participant.setRole(role);
         participantRepo.save(participant);
 
-        System.out.println("Added participant end" );
     }
 
     public List<ParticipantResponse> fetchParticipantsByEventId(UUID eventId) {
@@ -49,7 +45,7 @@ public class ParticipantService {
         return participantRepo.findWaitingParticipantsByEventId(eventId);
     }
 
-    public void updateParticipantRole(UUID participantId,String decision){
+    public Participant updateParticipantRole(UUID participantId, String decision){
 
         Participant participant = participantRepo.findById(participantId).orElseThrow();
 
@@ -60,7 +56,14 @@ public class ParticipantService {
         else
             participant.setRole(ParticipantRole.REJECTED);
 
-        participantRepo.save(participant);
+
+        return participantRepo.save(participant);
 
     }
+
+    public boolean isCoHost(UUID eventId, UUID userId){
+        String role = participantRepo.getRole(eventId, userId);
+        return role.equals("CO_HOST");
+    }
+
 }

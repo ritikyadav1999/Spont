@@ -4,9 +4,8 @@ import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import org.example.spont.auth.security.CustomUserDetails;
 import org.example.spont.auth.security.JwtService;
-import org.example.spont.event.dto.CreateEventRequest;
-import org.example.spont.event.dto.RequestJoinEventRequest;
-import org.example.spont.event.dto.RequestJoinEventResponse;
+import org.example.spont.common.response.PaginatedResponse;
+import org.example.spont.event.dto.*;
 import org.example.spont.event.entity.Event;
 import org.example.spont.event.entity.EventStatus;
 import org.example.spont.event.entity.JoinMode;
@@ -19,9 +18,11 @@ import org.example.spont.participant.entity.ParticipantRole;
 import org.example.spont.participant.service.ParticipantService;
 import org.example.spont.user.entity.User;
 import org.example.spont.user.service.UserService;
+import org.example.spont.utils.TextUtil;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.stereotype.Service;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -45,13 +46,7 @@ public class EventService {
     public Event createEvent(CreateEventRequest request, String creatorId)    {
 
         try{
-            System.out.println("checkpoint: Event Service");
-
-
             UUID uuid = UUID.fromString(creatorId);
-
-            System.out.println("checkpoint: creatorID " + creatorId);
-
 
             User creator = userService.findUserById(uuid)
                     .orElseThrow(() -> new RuntimeException("User not found"));
@@ -64,7 +59,7 @@ public class EventService {
             Event event = new Event();
 
             event.setCreator(creator);
-            event.setTitle(request.title());
+            event.setTitle(TextUtil.normalize(request.title()));
             event.setDescription(request.description());
             event.setLocationName(request.locationName());
             event.setLatitude(request.latitude());
@@ -86,6 +81,8 @@ public class EventService {
             Event savedEvent = eventRepo.save(event);
 
             participantService.addParticipant(savedEvent,creator, ParticipantRole.HOST);
+
+ 
 
             return savedEvent;
         } catch (Exception e) {
@@ -117,10 +114,11 @@ public class EventService {
 
             if (existingUser.isPresent())
                 user = existingUser.get();
-            else
+            else{
                 user = userService.guestRegistration(request.name(),request.phone(),request.gender());
+                jwtToken = jwtService.generateToken(user.getUserId().toString());
+            }
 
-            jwtToken = jwtService.generateToken(user.getUserId().toString());
         }
 
         // Check event status
@@ -145,6 +143,7 @@ public class EventService {
 
         notificationService.createNotification(
                 event.getCreator().getUserId(),
+                event.getInviteToken(),
                 "join_request",
                 user.getName() + " requested to join your event"
         );
@@ -183,23 +182,93 @@ public class EventService {
         User creator = userService.findUserById(user.getUser().getUserId())
                 .orElseThrow(() -> new RuntimeException("User not found"));
 
-        if(event.getCreator().getUserId() != creator.getUserId()) {
+        boolean isCoHost = participantService.isCoHost(event.getEventId(),user.getUserId());
+
+        if(event.getCreator().getUserId() != creator.getUserId() && !isCoHost) {
             throw new RuntimeException("Unauthorized");
         }
 
-        participantService.updateParticipantRole(participantId,decision);
+        Participant participant = participantService.updateParticipantRole(participantId, decision);
+
+        String message;
+
+        if (decision.equalsIgnoreCase("co_host")) {
+            message = "You have been promoted to co-host.";
+        } else {
+            message = "Your request was " + decision.toLowerCase() + ".";
+        }
 
         notificationService.createNotification(
-                participantId,
+                participant.getUser().getUserId(),
+                event.getInviteToken(),
                 decision,
-                "Your request was " + decision.toLowerCase()
+                message
         );
     }
 
-    public Page<Event> getUpcomingEvents(int page,int size){
-        return eventRepo.getUpcomingEvents(
-                PageRequest.of(page, size)
+    public Page<EventResponseDTO> getUpcomingEvents(int page, int size) {
+
+        Pageable pageable = PageRequest.of(page, size);
+
+        Page<Event> events = eventRepo.getUpcomingEvents(pageable);
+
+        return events.map(this::mapToDto);
+    }
+
+    private EventResponseDTO mapToDto(Event event) {
+        return new EventResponseDTO(
+                event.getEventId(),
+                event.getInviteToken(),
+                event.getTitle(),
+                event.getDescription(),
+                event.getStartTime(),
+                event.getEndTime(),
+                event.getLocationName(),
+                event.getLatitude(),
+                event.getLongitude(),
+                event.getStatus().name(),
+                event.getJoinMode().name(),
+                event.getVisibility().name(),
+                event.getMaxParticipants(),
+                new UserSummaryDTO(
+                        event.getCreator().getUserId(),
+                        event.getCreator().getName()
+                )
         );
+    }
+
+    public MyEventsResponse getMyEvents(UUID userId, int hostingPage, int attendingPage) {
+
+        Pageable hostingPageable = PageRequest.of(hostingPage, 5);
+        Pageable attendingPageable = PageRequest.of(attendingPage, 10);
+
+        Page<Event> hosting = eventRepo.getHostingEvents(userId, hostingPageable);
+        Page<Event> attending = eventRepo.getAttendingEvents(userId, attendingPageable);
+
+        // 🔥 Convert to DTO
+        Page<EventResponseDTO> hostingDto = hosting.map(this::mapToDto);
+        Page<EventResponseDTO> attendingDto = attending.map(this::mapToDto);
+
+        return new MyEventsResponse(
+                new PaginatedResponse<>(hostingDto),
+                new PaginatedResponse<>(attendingDto)
+        );
+    }
+
+    public Page<MyPastEvents> getPastEvents(UUID userId, int page) {
+
+        Pageable pageable = PageRequest.of(page, 15);
+
+        Page<MyPastEvents> past = eventRepo.getPastEvents(userId, pageable);
+
+        return past;
+    }
+
+    public EventResponseDTO fetchEventByToken(String token){
+        Event event = eventRepo.findByInviteToken(token).orElseThrow(() -> new RuntimeException("Event not found"));
+        EventResponseDTO eventResponseDTO = mapToDto(event);
+        return eventResponseDTO;
+
     }
 
 }

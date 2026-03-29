@@ -2,13 +2,16 @@ package org.example.spont.event.controller;
 
 import lombok.RequiredArgsConstructor;
 import org.example.spont.auth.security.CustomUserDetails;
-import org.example.spont.event.dto.CreateEventRequest;
-import org.example.spont.event.dto.RequestJoinEventRequest;
-import org.example.spont.event.dto.RequestJoinEventResponse;
+import org.example.spont.common.response.ApiResponse;
+import org.example.spont.common.response.PaginatedResponse;
+import org.example.spont.common.response.ResponseUtil;
+import org.example.spont.event.dto.*;
 import org.example.spont.event.entity.Event;
 import org.example.spont.event.service.EventService;
 import org.example.spont.participant.dto.ParticipantResponse;
 import org.springframework.data.domain.Page;
+import org.springframework.data.repository.query.Param;
+import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 
@@ -27,36 +30,36 @@ public class EventController {
                              @AuthenticationPrincipal CustomUserDetails user
                              ) {
 
-        System.out.println("checkpoint: Event controller");
-
         Event event = eventService.createEvent(request,user.getUsername());
         return event;
     }
 
-    @PostMapping("/request_join/{token}")
-    public RequestJoinEventResponse requestJoin(
+    @PostMapping("/request-join/{token}")
+    public ResponseEntity<ApiResponse<RequestJoinEventResponse>> requestJoin(
             @PathVariable String token,
             @RequestBody RequestJoinEventRequest request,
             @AuthenticationPrincipal CustomUserDetails user
     ){
         RequestJoinEventResponse response = eventService.requestJoin(token, request, user);
-        return  response;
+        return ResponseUtil.ok(response);
     }
 
     @GetMapping("/{token}/participants/approved")
-    public List<ParticipantResponse> participantList(
+    public ResponseEntity<ApiResponse<List<ParticipantResponse>>>participantList(
             @PathVariable String token,
             @AuthenticationPrincipal CustomUserDetails user
     ){
-        return eventService.fetchParticipantList(token,user);
+        List<ParticipantResponse> participantResponses = eventService.fetchParticipantList(token, user);
+        return ResponseUtil.ok(participantResponses);
     }
 
-    @GetMapping("/{token}/participants/waiting")
-    public List<ParticipantResponse> watingList(
+    @GetMapping("/{token}/participants/pending")
+    public ResponseEntity<ApiResponse<List<ParticipantResponse>>> watingList(
             @PathVariable String token,
             @AuthenticationPrincipal CustomUserDetails user
     ){
-        return eventService.waitingList(token,user);
+        List<ParticipantResponse> participantResponses = eventService.waitingList(token, user);
+        return ResponseUtil.ok(participantResponses);
     }
 
     @PutMapping("/{token}/participant/{participantId}/{decision}")
@@ -72,11 +75,38 @@ public class EventController {
 
 
     @GetMapping
-    public Page<Event> getEvents(
+    public ResponseEntity<ApiResponse<Page<EventResponseDTO>>> getEvents(
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "10") int size
     ) {
-        return eventService.getUpcomingEvents(page, size);
+        Page<EventResponseDTO> upcomingEvents = eventService.getUpcomingEvents(page, size);
+        return ResponseUtil.ok(upcomingEvents);
+    }
+
+    @GetMapping("/my-events")
+    public ResponseEntity<ApiResponse<MyEventsResponse>> getMyEvents(
+            @AuthenticationPrincipal CustomUserDetails user,
+            @RequestParam(defaultValue = "0") int hostingPage,
+            @RequestParam(defaultValue = "0") int attendingPage
+    ) {
+        MyEventsResponse myEvents = eventService.getMyEvents(user.getUserId(), hostingPage, attendingPage);
+        return ResponseUtil.ok(myEvents);
+    }
+
+    @GetMapping("/my-events/past")
+    public ResponseEntity<ApiResponse<Page<MyPastEvents>>> getPastEvents(
+            @AuthenticationPrincipal CustomUserDetails user,
+            @RequestParam(defaultValue = "0") int page
+    ) {
+        Page<MyPastEvents> pastEvents = eventService.getPastEvents(user.getUserId(), page);
+        return ResponseUtil.ok(pastEvents);
+    }
+
+
+    @GetMapping("/{token}")
+    public ResponseEntity<ApiResponse<EventResponseDTO>> getEventByToken(@PathVariable String token){
+        EventResponseDTO eventResponseDTO = eventService.fetchEventByToken(token);
+        return ResponseUtil.ok(eventResponseDTO);
     }
 
 

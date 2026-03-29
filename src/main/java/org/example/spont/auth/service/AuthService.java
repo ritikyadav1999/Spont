@@ -2,9 +2,11 @@ package org.example.spont.auth.service;
 
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
+import org.example.spont.auth.dto.AuthTokens;
 import org.example.spont.auth.dto.LoginRequest;
 import org.example.spont.auth.dto.LoginResponse;
 import org.example.spont.auth.dto.RegisterRequest;
+import org.example.spont.auth.entity.RefreshToken;
 import org.example.spont.auth.security.CustomUserDetails;
 import org.example.spont.auth.security.JwtService;
 import org.example.spont.user.entity.User;
@@ -21,6 +23,7 @@ public class AuthService {
 
     private final UserService userService;
     private final AuthenticationManager authenticationManager;
+    private final RefreshTokenService refreshTokenService;
     private final JwtService jwtService;
 
     public User register(RegisterRequest request){
@@ -28,17 +31,27 @@ public class AuthService {
     }
 
 
-    public LoginResponse login(@Valid @RequestBody  LoginRequest request) {
-        System.out.println("checkpoint :Login Service 1");
+    public AuthTokens login(LoginRequest request) {
         Authentication authentication = authenticationManager.authenticate(
                 new UsernamePasswordAuthenticationToken(request.identifier(), request.password())
         );
 
         CustomUserDetails userDetails = (CustomUserDetails) authentication.getPrincipal();
 
-        System.out.println("checkpoint :Login Service 2");
+        String accessToken = jwtService.generateToken(userDetails.getUsername());
 
-        return new LoginResponse(jwtService.generateToken(userDetails.getUsername()));
+        RefreshToken refreshToken = refreshTokenService.createRefreshToken(
+                userDetails.getUserId()
+        );
+
+        return new AuthTokens(
+                accessToken,
+                refreshToken.getToken(),
+                userDetails.getUser()
+        );
+
     }
+
+
 
 }

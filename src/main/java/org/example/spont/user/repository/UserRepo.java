@@ -2,7 +2,9 @@ package org.example.spont.user.repository;
 
 import org.example.spont.user.entity.User;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
 import java.util.Optional;
@@ -21,7 +23,6 @@ public interface UserRepo extends JpaRepository<User, UUID> {
            OR email = :identifier
 """ ,nativeQuery = true)
     Optional<User> findByIdentifier(String identifier);
-
 
 
 

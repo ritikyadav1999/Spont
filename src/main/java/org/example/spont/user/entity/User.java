@@ -44,7 +44,6 @@ public class User {
     private Gender gender;
 
 //    audit fields
-
     @CreationTimestamp
     @Column(name = "created_at",nullable = false)
     private Instant createdAt;

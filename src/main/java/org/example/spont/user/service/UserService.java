@@ -3,10 +3,13 @@ package org.example.spont.user.service;
 import jakarta.transaction.Transactional;
 import jakarta.validation.constraints.NotBlank;
 import lombok.RequiredArgsConstructor;
+import org.example.spont.auth.security.CustomUserDetails;
 import org.example.spont.user.entity.Gender;
 import org.example.spont.user.entity.User;
 import org.example.spont.user.entity.UserType;
 import org.example.spont.user.repository.UserRepo;
+import org.example.spont.utils.TextUtil;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
@@ -50,7 +53,7 @@ public class UserService {
             }
 
             User newUser = new User();
-            newUser.setName(name);
+            newUser.setName(TextUtil.normalize(name));
             newUser.setPhone(phone);
             newUser.setEmail(email);
             newUser.setGender(gender);
@@ -86,27 +89,10 @@ public class UserService {
     }
 
 
-    @Transactional
-    public String guestRegistration(String name, String phone){
-
-        Optional<User> existingUser = userRepo.findByPhone(phone);
-        if(existingUser.isEmpty()){
-            User user = new User();
-            user.setName(name);
-            user.setPhone(phone);
-            user.setUserType(UserType.GUEST);
-            userRepo.save(user);
-
-            return "Guest registered successfully";
-        }
-
-        return "Guest registered successfully";
-    }
-
 
     public User guestRegistration(String name, String phone, Gender gender){
         User user = new User();
-        user.setName(name);
+        user.setName(TextUtil.normalize(name));
         user.setPhone(phone);
         user.setUserType(UserType.GUEST);
         user.setGender(gender);

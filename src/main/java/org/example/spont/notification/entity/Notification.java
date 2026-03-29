@@ -28,4 +28,7 @@ public class Notification {
     private boolean isRead;
 
     private Instant createdAt;
+
+    @Column(name = "event_token",nullable = false)
+    private String eventToken;
 }

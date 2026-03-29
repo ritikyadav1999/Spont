@@ -17,13 +17,15 @@ public interface ParticipantRepo extends JpaRepository<Participant, UUID> {
 
     @Query(value = """
     SELECT
-            u.name AS name,
-            p.role AS role,
-            p.joined_at AS joinedAt
-        FROM participants p
-        JOIN users u ON p.user_id = u.user_id
-        WHERE p.event_id = :eventId
-        AND p.role <> 'PENDING'
+        u.name AS name,
+        p.participant_id AS participantId,
+        p.user_id AS userId,
+        p.role AS role,
+        p.joined_at AS joinedAt
+    FROM participants p
+    JOIN users u ON p.user_id = u.user_id
+    WHERE p.event_id = :eventId
+    AND p.role NOT IN ('PENDING', 'REJECTED')
 """, nativeQuery = true)
     List<ParticipantResponse> findByEventId(@Param("eventId") UUID eventId);
 
@@ -31,6 +33,8 @@ public interface ParticipantRepo extends JpaRepository<Participant, UUID> {
     @Query(value = """
     SELECT
             u.name AS name,
+            p.participant_id as participantId,
+            p.user_id as userId,
             p.role AS role,
             p.joined_at AS joinedAt
         FROM participants p
@@ -48,5 +52,14 @@ public interface ParticipantRepo extends JpaRepository<Participant, UUID> {
 """, nativeQuery = true)
     long countByEventIdAndRole(@Param("eventId") UUID eventId,
                                @Param("role") String role);
+
+
+    @Query(value = """
+    SELECT p.role FROM participants p
+    WHERE p.event_id = :eventId 
+    AND p.user_id = :userId
+""", nativeQuery = true)
+    String getRole(@Param("eventId") UUID eventId,
+                   @Param("userId") UUID userId);
 
 }
