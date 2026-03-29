@@ -61,7 +61,7 @@ public class SecurityConfig {
 
         config.setAllowedOrigins(List.of(
                 "http://localhost:3000",
-                "http://10.255.4.197:3000"
+                "https://spont-frontend.vercel.app"
         ));
 
         config.setAllowedMethods(List.of("GET", "POST", "PUT", "DELETE", "OPTIONS"));
