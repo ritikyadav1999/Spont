@@ -1,5 +1,6 @@
 package org.example.spont.auth.security;
 
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 
 import io.jsonwebtoken.Jwts;
@@ -13,10 +14,11 @@ import java.util.Date;
 @Service
 public class JwtService {
 
-    private final String SECRET = "abd04008-74b2-47bc-b31b-ed1792359752";
+    @Value("${jwt.secret}")
+    private String secret;
 
     private SecretKey getSignInKey() {
-        return Keys.hmacShaKeyFor(SECRET.getBytes());
+        return Keys.hmacShaKeyFor(secret.getBytes());
     }
 
     public String generateToken(String userId) {
