@@ -7,9 +7,7 @@ import lombok.RequiredArgsConstructor;
 import org.example.spont.auth.entity.RefreshToken;
 import org.example.spont.auth.repository.RefreshTokenRepo;
 import org.example.spont.auth.security.JwtService;
-import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
-import org.springframework.web.server.ResponseStatusException;
 
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
@@ -36,20 +34,20 @@ public class RefreshTokenService {
     }
 
     public RefreshToken verifyToken(String token) {
+
         RefreshToken refreshToken = refreshTokenRepository.findByToken(token)
-                .orElseThrow(() -> new ResponseStatusException(HttpStatus.UNAUTHORIZED, "Invalid refresh token"));
+                .orElseThrow(() -> new RuntimeException("Invalid refresh token"));
 
         if (refreshToken.isRevoked()) {
-            throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, "Refresh token revoked");
+            throw new RuntimeException("Token revoked");
         }
 
         if (refreshToken.getExpiryDate().isBefore(Instant.now())) {
-            throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, "Refresh token expired");
+            throw new RuntimeException("Token expired");
         }
 
         return refreshToken;
     }
-
 
     @Transactional
     public void revokeToken(String token) {

@@ -1,6 +1,5 @@
 package org.example.spont.auth.security;
 
-import io.jsonwebtoken.JwtException;
 import org.springframework.stereotype.Service;
 
 import io.jsonwebtoken.Jwts;
@@ -36,18 +35,6 @@ public class JwtService {
                 .parseSignedClaims(token)
                 .getPayload()
                 .getSubject();
-    }
-
-    public boolean isTokenValid(String token) {
-        try {
-            Jwts.parser()
-                    .verifyWith(getSignInKey())
-                    .build()
-                    .parseSignedClaims(token);
-            return true;
-        } catch (JwtException e) {
-            return false;
-        }
     }
 
 
