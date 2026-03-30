@@ -1,5 +1,6 @@
 package org.example.spont.config;
 
+import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
 import org.example.spont.auth.security.JwtAuthenticationFilter;
 import org.example.spont.user.entity.User;
@@ -27,23 +28,28 @@ public class SecurityConfig {
 
     private final JwtAuthenticationFilter jwtAuthenticationFilter;
 
-
-
     @Bean
     public SecurityFilterChain securityWebFilterChain(HttpSecurity http) throws Exception {
         http
                 .cors(Customizer.withDefaults())
                 .csrf(csrf -> csrf.disable())
-                .authorizeHttpRequests(auth-> auth
+                .authorizeHttpRequests(auth -> auth
                         .requestMatchers("/api/auth/**").permitAll()
                         .requestMatchers("/api/event/my-events/**").authenticated()
                         .requestMatchers("/api/event/**").permitAll()
-                        .requestMatchers("/api/user/**").permitAll()
+                        .requestMatchers("/api/user/**").authenticated() // 🔥 change if needed
                         .requestMatchers("/api/feedback/**").permitAll()
                         .anyRequest().authenticated()
                 )
-                .httpBasic(httpBasicAuth->httpBasicAuth.disable())
-                .formLogin(formLoginAuth->formLoginAuth.disable());
+                .httpBasic(httpBasic -> httpBasic.disable())
+                .formLogin(formLogin -> formLogin.disable())
+                .anonymous(anon -> anon.disable())
+                .exceptionHandling(ex -> ex
+                        .authenticationEntryPoint((req, res, ex2) -> {
+                            res.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
+                            res.getWriter().write("Unauthorized");
+                        })
+                );
 
         http.addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class);
 

@@ -26,6 +26,8 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
                                     FilterChain filterChain)
             throws ServletException, IOException {
 
+        System.out.println("entered in JWTAuthenticationFilter");
+
         String authHeader = request.getHeader("Authorization");
 
         // No token → continue normally
