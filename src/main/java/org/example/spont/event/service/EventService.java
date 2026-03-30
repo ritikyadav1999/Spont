@@ -174,7 +174,7 @@ public class EventService {
 
         boolean isCoHost = participantService.isCoHost(event.getEventId(),user.getUserId());
 
-        if(event.getCreator().getUserId() != creator.getUserId() && !isCoHost) {
+        if(!event.getCreator().getUserId().equals(creator.getUserId()) && !isCoHost) {
             throw new RuntimeException("Unauthorized");
         }
 

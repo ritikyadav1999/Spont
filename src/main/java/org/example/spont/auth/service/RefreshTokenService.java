@@ -57,6 +57,9 @@ public class RefreshTokenService {
     }
 
     public String  refresh(String refreshToken) {
+        if (refreshToken == null || refreshToken.isBlank()) {
+            throw new RuntimeException("Missing refresh token");
+        }
         RefreshToken token = verifyToken(refreshToken);
         String newAccessToken = jwtService.generateToken(token.getUserId().toString());
 

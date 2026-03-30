@@ -60,7 +60,14 @@ public class AuthController {
     }
 
     @PostMapping("/refresh")
-    public ResponseEntity<ApiResponse<String>> refresh(@CookieValue("refreshToken") String token) {
+    public ResponseEntity<ApiResponse<String>> refresh(
+            @CookieValue(value = "refreshToken", required = false) String cookieToken,
+            @RequestHeader(value = "X-Refresh-Token", required = false) String headerToken
+    ) {
+        String token = cookieToken != null ? cookieToken : headerToken;
+        if (token == null || token.isBlank()) {
+            return ResponseEntity.status(401).build();
+        }
         String refresh = refreshTokenService.refresh(token);
         return ResponseUtil.ok(refresh);
     }
