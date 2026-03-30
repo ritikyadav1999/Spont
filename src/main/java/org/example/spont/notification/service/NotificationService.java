@@ -22,15 +22,14 @@ public class NotificationService {
 
     public void createNotification(UUID userId, String eventToken,String notificationType, String message) {
 
-        NotificationType type ;
-        if(notificationType.equalsIgnoreCase("approved"))
-            type = NotificationType.APPROVED;
-        else if(notificationType.equalsIgnoreCase("rejected"))
-            type = NotificationType.REJECTED;
-        else if (notificationType.equalsIgnoreCase("join_request")) {
-            type = NotificationType.JOIN_REQUEST;
-        } else
-            type = NotificationType.CO_HOST;
+        NotificationType type;
+        switch (notificationType.toLowerCase()) {
+            case "approved" -> type = NotificationType.APPROVED;
+            case "rejected" -> type = NotificationType.REJECTED;
+            case "join_request" -> type = NotificationType.JOIN_REQUEST;
+            case "co_host" -> type = NotificationType.CO_HOST;
+            default -> throw new RuntimeException("Invalid type");
+        }
 
         Notification notification = Notification.builder()
                 .id(UUID.randomUUID())

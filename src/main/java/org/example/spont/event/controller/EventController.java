@@ -83,13 +83,21 @@ public class EventController {
         return ResponseUtil.ok(upcomingEvents);
     }
 
-    @GetMapping("/my-events")
-    public ResponseEntity<ApiResponse<MyEventsResponse>> getMyEvents(
+    @GetMapping("/my-events/hosting")
+    public ResponseEntity<ApiResponse<Page<EventResponseDTO>>> getMyHostingEvents(
             @AuthenticationPrincipal CustomUserDetails user,
-            @RequestParam(defaultValue = "0") int hostingPage,
+            @RequestParam(defaultValue = "0") int hostingPage
+    ) {
+        Page<EventResponseDTO> myEvents = eventService.getMyHostingEvents(user.getUserId(), hostingPage);
+        return ResponseUtil.ok(myEvents);
+    }
+
+    @GetMapping("/my-events/attending")
+    public ResponseEntity<ApiResponse<Page<EventResponseDTO>>> getMyAttendingEvents(
+            @AuthenticationPrincipal CustomUserDetails user,
             @RequestParam(defaultValue = "0") int attendingPage
     ) {
-        MyEventsResponse myEvents = eventService.getMyEvents(user.getUserId(), hostingPage, attendingPage);
+        Page<EventResponseDTO> myEvents = eventService.getMyAttendingEvents(user.getUserId(),attendingPage);
         return ResponseUtil.ok(myEvents);
     }
 

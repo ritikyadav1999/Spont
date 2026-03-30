@@ -98,6 +98,12 @@ public class EventService {
         Event event = eventRepo.findByInviteToken(inviteToken)
                 .orElseThrow(() -> new RuntimeException("Event not found"));
 
+        // Check event status
+        if (event.getStatus() == EventStatus.CANCELLED) {
+            throw new IllegalStateException("Event is not joinable");
+        }
+
+
         User user;
         String jwtToken = null;
 
@@ -106,24 +112,8 @@ public class EventService {
             user = userService.findUserById(userDetails.getUser().getUserId())
                     .orElseThrow();
         }
-
-        // CASE 2: Not logged in
-        else {
-
-            Optional<User> existingUser = userService.findUserByPhone(request.phone());
-
-            if (existingUser.isPresent())
-                user = existingUser.get();
-            else{
-                user = userService.guestRegistration(request.name(),request.phone(),request.gender());
-                jwtToken = jwtService.generateToken(user.getUserId().toString());
-            }
-
-        }
-
-        // Check event status
-        if (event.getStatus() == EventStatus.CANCELLED) {
-            throw new IllegalStateException("Event is not joinable");
+        else{
+            throw new RuntimeException("User must sign in to join event");
         }
 
         ParticipantRole role;
@@ -237,23 +227,29 @@ public class EventService {
         );
     }
 
-    public MyEventsResponse getMyEvents(UUID userId, int hostingPage, int attendingPage) {
+    public Page<EventResponseDTO> getMyHostingEvents(UUID userId, int hostingPage) {
 
         Pageable hostingPageable = PageRequest.of(hostingPage, 5);
-        Pageable attendingPageable = PageRequest.of(attendingPage, 10);
 
         Page<Event> hosting = eventRepo.getHostingEvents(userId, hostingPageable);
-        Page<Event> attending = eventRepo.getAttendingEvents(userId, attendingPageable);
 
         // 🔥 Convert to DTO
         Page<EventResponseDTO> hostingDto = hosting.map(this::mapToDto);
+
+        return hostingDto;
+    }
+
+    public Page<EventResponseDTO> getMyAttendingEvents(UUID userId, int attendingPage) {
+
+        Pageable attendingPageable = PageRequest.of(attendingPage, 10);
+
+        Page<Event> attending = eventRepo.getAttendingEvents(userId, attendingPageable);
+
         Page<EventResponseDTO> attendingDto = attending.map(this::mapToDto);
 
-        return new MyEventsResponse(
-                new PaginatedResponse<>(hostingDto),
-                new PaginatedResponse<>(attendingDto)
-        );
+        return attendingDto;
     }
+
 
     public Page<MyPastEvents> getPastEvents(UUID userId, int page) {
 

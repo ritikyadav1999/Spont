@@ -65,38 +65,7 @@ public class UserService {
             return saveduser;
         }
 
-        User existingUser = existingUserOpt.get();
-
-        // CASE 2: Guest exists → upgrade guest to REGISTERED
-        if (existingUser.getUserType() == UserType.GUEST) {
-
-            if (email != null && userRepo.findByEmail(email).isPresent()) {
-                throw new RuntimeException("Email already in use");
-            }
-
-            existingUser.setName(name);
-            existingUser.setEmail(email);
-            existingUser.setPassword(passwordEncoder.encode(password)); // later encode password
-            existingUser.setUserType(UserType.REGISTERED);
-
-            User saved = userRepo.save(existingUser);
-
-            return saved;
-        }
-
-        // CASE 3: Already registered
         throw new RuntimeException("User already registered");
     }
 
-
-
-    public User guestRegistration(String name, String phone, Gender gender){
-        User user = new User();
-        user.setName(TextUtil.normalize(name));
-        user.setPhone(phone);
-        user.setUserType(UserType.GUEST);
-        user.setGender(gender);
-
-        return userRepo.save(user);
-    }
 }
