@@ -6,6 +6,7 @@ import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
+import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.web.authentication.WebAuthenticationDetailsSource;
@@ -24,6 +25,8 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
     private final JwtService jwtService;
     private final CustomUserDetailsService customUserDetailsService;
 
+
+
     @Override
     protected void doFilterInternal(HttpServletRequest request,
                                     HttpServletResponse response,
@@ -32,17 +35,25 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
 
         String path = request.getRequestURI();
 
-        // ✅ Skip auth endpoints
+        log.info("➡️ Incoming request: {}", path);
+
+        // Skip auth endpoints
         if (path.startsWith("/api/auth")) {
-            System.out.println("skipping auth routes ... ");
+            log.info("⏭️ Skipping JWT filter for auth route");
             filterChain.doFilter(request, response);
             return;
         }
 
         String authHeader = request.getHeader("Authorization");
 
-        if (authHeader == null || !authHeader.startsWith("Bearer ")) {
-            log.debug("Missing/invalid Authorization header for {}", path);
+        if (authHeader == null) {
+            log.warn("❌ No Authorization header for {}", path);
+            filterChain.doFilter(request, response);
+            return;
+        }
+
+        if (!authHeader.startsWith("Bearer ")) {
+            log.warn("❌ Invalid Authorization format for {}", path);
             filterChain.doFilter(request, response);
             return;
         }
@@ -50,7 +61,11 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
         String token = authHeader.substring(7);
 
         try {
+            log.info("🔐 Validating token...");
+
             String userId = jwtService.extractSubject(token);
+
+            log.info("✅ Token valid for userId: {}", userId);
 
             if (userId != null && SecurityContextHolder.getContext().getAuthentication() == null) {
 
@@ -66,18 +81,18 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
                 authentication.setDetails(new WebAuthenticationDetailsSource().buildDetails(request));
 
                 SecurityContextHolder.getContext().setAuthentication(authentication);
+
+                log.info("✅ Authentication set for {}", userId);
             }
 
-        } catch (io.jsonwebtoken.ExpiredJwtException e) {
-            log.warn("Expired JWT for {}", path);
-            response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
-            return;
-        } catch (io.jsonwebtoken.JwtException e) {
-            log.warn("Invalid JWT for {}: {}", path, e.getMessage());
-            response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
-            return;
+        } catch (Exception e) {
+            log.error("❌ JWT ERROR for {} : {}", path, e.getMessage());
         }
+
+        Authentication auth = SecurityContextHolder.getContext().getAuthentication();
+        log.info("🔎 Final Auth Object: {}", auth != null ? auth.getClass().getSimpleName() : "null");
 
         filterChain.doFilter(request, response);
     }
+
 }
