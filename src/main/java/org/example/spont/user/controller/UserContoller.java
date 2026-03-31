@@ -6,6 +6,7 @@ import org.example.spont.common.response.ResponseUtil;
 import org.example.spont.user.entity.User;
 import org.example.spont.user.service.UserService;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -21,6 +22,7 @@ public class UserContoller {
 
     private final UserService userService;
 
+    @PreAuthorize("permitAll()")
     @GetMapping("/{userId}")
     public ResponseEntity<ApiResponse<User>> getUser(@PathVariable UUID userId) {
         User userById = userService.findUserById(userId).orElseThrow();

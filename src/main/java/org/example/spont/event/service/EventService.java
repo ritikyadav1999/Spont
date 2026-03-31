@@ -110,7 +110,7 @@ public class EventService {
         // CASE 1: Logged in user
         if (userDetails != null) {
             user = userService.findUserById(userDetails.getUser().getUserId())
-                    .orElseThrow();
+                    .orElseThrow(() -> new RuntimeException("User not found"));
         }
         else{
             throw new RuntimeException("User must sign in to join event");
@@ -144,7 +144,7 @@ public class EventService {
 
     }
 
-    public List<ParticipantResponse> fetchParticipantList(String token, CustomUserDetails user) {
+    public List<ParticipantResponse> fetchParticipantList(String token) {
 
         Event event = eventRepo.findByInviteToken(token)
                 .orElseThrow(() -> new RuntimeException("Event not found"));
@@ -155,7 +155,7 @@ public class EventService {
 
     }
 
-    public List<ParticipantResponse> waitingList(String token, CustomUserDetails user) {
+    public List<ParticipantResponse> waitingList(String token) {
         Event event = eventRepo.findByInviteToken(token)
                 .orElseThrow(() -> new RuntimeException("Event not found"));
 

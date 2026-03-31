@@ -12,6 +12,7 @@ import org.example.spont.participant.dto.ParticipantResponse;
 import org.springframework.data.domain.Page;
 import org.springframework.data.repository.query.Param;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 
@@ -25,6 +26,7 @@ public class EventController {
 
     private final EventService eventService;
 
+    @PreAuthorize("isAuthenticated()")
     @PostMapping("/create")
     public Event createEvent(@RequestBody CreateEventRequest request ,
                              @AuthenticationPrincipal CustomUserDetails user
@@ -34,6 +36,7 @@ public class EventController {
         return event;
     }
 
+    @PreAuthorize("isAuthenticated()")
     @PostMapping("/request-join/{token}")
     public ResponseEntity<ApiResponse<RequestJoinEventResponse>> requestJoin(
             @PathVariable String token,
@@ -44,24 +47,27 @@ public class EventController {
         return ResponseUtil.ok(response);
     }
 
+
+    @PreAuthorize("permitAll()")
     @GetMapping("/{token}/participants/approved")
     public ResponseEntity<ApiResponse<List<ParticipantResponse>>>participantList(
             @PathVariable String token,
             @AuthenticationPrincipal CustomUserDetails user
     ){
-        List<ParticipantResponse> participantResponses = eventService.fetchParticipantList(token, user);
+        List<ParticipantResponse> participantResponses = eventService.fetchParticipantList(token);
         return ResponseUtil.ok(participantResponses);
     }
 
+    @PreAuthorize("permitAll()")
     @GetMapping("/{token}/participants/pending")
     public ResponseEntity<ApiResponse<List<ParticipantResponse>>> watingList(
-            @PathVariable String token,
-            @AuthenticationPrincipal CustomUserDetails user
+            @PathVariable String token
     ){
-        List<ParticipantResponse> participantResponses = eventService.waitingList(token, user);
+        List<ParticipantResponse> participantResponses = eventService.waitingList(token);
         return ResponseUtil.ok(participantResponses);
     }
 
+    @PreAuthorize("isAuthenticated()")
     @PutMapping("/{token}/participant/{participantId}/{decision}")
     public void reviewParticipantRequest(
             @PathVariable String token,
@@ -74,6 +80,7 @@ public class EventController {
     }
 
 
+    @PreAuthorize("permitAll()")
     @GetMapping
     public ResponseEntity<ApiResponse<Page<EventResponseDTO>>> getEvents(
             @RequestParam(defaultValue = "0") int page,
@@ -83,6 +90,7 @@ public class EventController {
         return ResponseUtil.ok(upcomingEvents);
     }
 
+    @PreAuthorize("isAuthenticated()")
     @GetMapping("/my-events/hosting")
     public ResponseEntity<ApiResponse<Page<EventResponseDTO>>> getMyHostingEvents(
             @AuthenticationPrincipal CustomUserDetails user,
@@ -92,6 +100,7 @@ public class EventController {
         return ResponseUtil.ok(myEvents);
     }
 
+    @PreAuthorize("isAuthenticated()")
     @GetMapping("/my-events/attending")
     public ResponseEntity<ApiResponse<Page<EventResponseDTO>>> getMyAttendingEvents(
             @AuthenticationPrincipal CustomUserDetails user,
@@ -101,6 +110,7 @@ public class EventController {
         return ResponseUtil.ok(myEvents);
     }
 
+    @PreAuthorize("isAuthenticated()")
     @GetMapping("/my-events/past")
     public ResponseEntity<ApiResponse<Page<MyPastEvents>>> getPastEvents(
             @AuthenticationPrincipal CustomUserDetails user,
@@ -110,7 +120,7 @@ public class EventController {
         return ResponseUtil.ok(pastEvents);
     }
 
-
+    @PreAuthorize("permitAll()")
     @GetMapping("/{token}")
     public ResponseEntity<ApiResponse<EventResponseDTO>> getEventByToken(@PathVariable String token){
         EventResponseDTO eventResponseDTO = eventService.fetchEventByToken(token);

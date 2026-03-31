@@ -8,6 +8,7 @@ import org.example.spont.notification.entity.Notification;
 import org.example.spont.notification.service.NotificationService;
 import org.springframework.data.domain.Page;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 
@@ -16,6 +17,7 @@ import java.util.UUID;
 
 @RestController
 @RequestMapping("/api/notifications")
+@PreAuthorize("isAuthenticated()")
 @RequiredArgsConstructor
 public class NotificationController {
 
