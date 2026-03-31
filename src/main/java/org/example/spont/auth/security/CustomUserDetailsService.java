@@ -19,14 +19,12 @@ public class CustomUserDetailsService implements UserDetailsService {
     @Override
     public UserDetails loadUserByUsername(String identifier) throws UsernameNotFoundException {
         User user = userService.findByIdentifier(identifier).orElseThrow();
-        System.out.println("user: " + user.getPhone());
         return new CustomUserDetails(user);
     }
 
 
     public UserDetails loadUserByUserid(String id) throws UsernameNotFoundException {
         User user = userService.findUserById(UUID.fromString(id)).orElseThrow();
-        System.out.println("user: " + user.getPhone());
         return new CustomUserDetails(user);
     }
 

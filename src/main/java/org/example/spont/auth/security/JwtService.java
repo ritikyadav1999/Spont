@@ -18,23 +18,11 @@ import java.util.Date;
 @Service
 public class JwtService {
 
-    private static final Logger log = LoggerFactory.getLogger(JwtService.class);
-
     @Value("${jwt.secret}")
     private String secret;
 
     @Value("${jwt.access-token-minutes:15}")
     private int accessTokenMinutes;
-
-    @PostConstruct
-    public void validateSecret() {
-        int length = secret != null ? secret.length() : 0;
-        String hash = sha256Hex(secret);
-        log.info("JWT config: secretHash={} secretLength={} accessTokenMinutes={}", hash, length, accessTokenMinutes);
-        if (length < 32) {
-            log.warn("JWT secret length is less than 32 characters; HS256 requires >= 256-bit key");
-        }
-    }
 
     private SecretKey getSignInKey() {
         return Keys.hmacShaKeyFor(secret.getBytes(StandardCharsets.UTF_8));
@@ -56,22 +44,5 @@ public class JwtService {
                 .parseSignedClaims(token)
                 .getPayload()
                 .getSubject();
-    }
-
-    private String sha256Hex(String value) {
-        if (value == null) {
-            return "null";
-        }
-        try {
-            MessageDigest digest = MessageDigest.getInstance("SHA-256");
-            byte[] bytes = digest.digest(value.getBytes(StandardCharsets.UTF_8));
-            StringBuilder sb = new StringBuilder(bytes.length * 2);
-            for (byte b : bytes) {
-                sb.append(String.format("%02x", b));
-            }
-            return sb.toString();
-        } catch (NoSuchAlgorithmException e) {
-            return "sha256-unavailable";
-        }
     }
 }

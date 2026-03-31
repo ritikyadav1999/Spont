@@ -56,6 +56,7 @@ public class RefreshTokenService {
         refreshTokenRepository.save(refreshToken);
     }
 
+    @Transactional
     public String  refresh(String refreshToken) {
         if (refreshToken == null || refreshToken.isBlank()) {
             throw new RuntimeException("Missing refresh token");

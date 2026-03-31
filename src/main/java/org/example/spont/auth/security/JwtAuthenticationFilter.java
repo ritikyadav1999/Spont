@@ -34,6 +34,7 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
 
         // ✅ Skip auth endpoints
         if (path.startsWith("/api/auth")) {
+            System.out.println("skipping auth routes ... ");
             filterChain.doFilter(request, response);
             return;
         }
