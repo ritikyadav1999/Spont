@@ -52,7 +52,8 @@ public class AuthController {
                 tokens.user().getName(),
                 tokens.user().getPhone(),
                 tokens.user().getEmail(),
-                tokens.user().getGender().toString()
+                tokens.user().getGender().toString(),
+                tokens.user().getUserId()
         );
 
 

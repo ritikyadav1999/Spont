@@ -267,5 +267,34 @@ public class EventService {
 
     }
 
+    @Transactional
+    public void editEventDetails(CreateEventRequest request,String token, CustomUserDetails user) {
+        Event event = eventRepo.findByInviteToken(token).orElseThrow(() -> new RuntimeException("Event not found"));
+
+        if(!event.getCreator().getUserId().equals(user.getUserId())) {
+            throw new RuntimeException("Unauthorized");
+        }
+
+        event.setTitle(TextUtil.normalize(request.title()));
+        event.setDescription(request.description());
+        event.setLocationName(request.locationName());
+        event.setLatitude(request.latitude());
+        event.setLongitude(request.longitude());
+        event.setStartTime(request.startTime());
+        event.setEndTime(request.endTime());
+        event.setMaxParticipants(request.maxParticipants());
+        event.setVisibility(request.visibility());
+        event.setJoinMode(request.joinMode());
+
+        if (request.startTime().isAfter(Instant.now())) {
+            event.setStatus(EventStatus.SCHEDULED);
+        } else {
+            event.setStatus(EventStatus.ONGOING);
+        }
+
+
+        eventRepo.save(event);
+
+    }
 }
 

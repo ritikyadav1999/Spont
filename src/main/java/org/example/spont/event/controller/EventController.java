@@ -127,5 +127,14 @@ public class EventController {
         return ResponseUtil.ok(eventResponseDTO);
     }
 
+    @PreAuthorize("isAuthenticated()")
+    @PutMapping("/{token}/edit")
+    public ResponseEntity<ApiResponse<Object>>  editEventDetails(@RequestBody CreateEventRequest request,
+                                 @PathVariable("token") String token,
+                                 @AuthenticationPrincipal CustomUserDetails user){
+        eventService.editEventDetails(request,token,user);
+        return ResponseUtil.ok(null, "Event Updated Successfully");
+    }
+
 
 }
